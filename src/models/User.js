@@ -1,23 +1,25 @@
-const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const store = require('../data/store');
 
-const userSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String, required: true, minlength: 6 },
-  },
-  { timestamps: true }
-);
+let nextId = 1;
 
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
-});
-
-userSchema.methods.matchPassword = function (plain) {
-  return bcrypt.compare(plain, this.password);
+exports.create = async ({ name, email, password }) => {
+  const user = {
+    id: nextId++,
+    name,
+    email: email.toLowerCase(),
+    password: await bcrypt.hash(password, 10),
+    createdAt: new Date().toISOString(),
+  };
+  store.users.push(user);
+  return user;
 };
 
-module.exports = mongoose.model('User', userSchema);
+exports.findByEmail = (email) => store.users.find((u) => u.email === String(email).toLowerCase());
+
+exports.findById = (id) => store.users.find((u) => u.id === Number(id));
+
+exports.matchPassword = (user, plain) => bcrypt.compare(plain, user.password);
+
+// user data without password
+exports.safe = (u) => ({ id: u.id, name: u.name, email: u.email });

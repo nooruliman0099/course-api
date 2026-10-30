@@ -1,13 +1,16 @@
 const Category = require('../models/Category');
 
 // POST /api/categories
-exports.createCategory = async (req, res, next) => {
+exports.createCategory = (req, res, next) => {
   try {
-    const { name, description } = req.body;
-    if (!name) {
+    const { name, description } = req.body || {};
+    if (!name || !String(name).trim()) {
       return res.status(400).json({ success: false, message: 'name is required' });
     }
-    const category = await Category.create({ name, description });
+    if (Category.findByName(name)) {
+      return res.status(400).json({ success: false, message: 'Category already exists' });
+    }
+    const category = Category.create({ name: String(name).trim(), description });
     res.status(201).json({ success: true, message: 'Category created', data: category });
   } catch (err) {
     next(err);
@@ -15,9 +18,9 @@ exports.createCategory = async (req, res, next) => {
 };
 
 // GET /api/categories
-exports.getCategories = async (req, res, next) => {
+exports.getCategories = (req, res, next) => {
   try {
-    const categories = await Category.find().sort({ createdAt: -1 });
+    const categories = Category.findAll();
     res.status(200).json({ success: true, count: categories.length, data: categories });
   } catch (err) {
     next(err);
@@ -25,9 +28,9 @@ exports.getCategories = async (req, res, next) => {
 };
 
 // GET /api/categories/:id
-exports.getCategory = async (req, res, next) => {
+exports.getCategory = (req, res, next) => {
   try {
-    const category = await Category.findById(req.params.id);
+    const category = Category.findById(req.params.id);
     if (!category) {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
@@ -38,20 +41,26 @@ exports.getCategory = async (req, res, next) => {
 };
 
 // PUT /api/categories/:id
-exports.updateCategory = async (req, res, next) => {
+exports.updateCategory = (req, res, next) => {
   try {
-    const { name, description } = req.body;
-    if (name !== undefined && !name.trim()) {
+    const { name, description } = req.body || {};
+    if (name !== undefined && !String(name).trim()) {
       return res.status(400).json({ success: false, message: 'name cannot be empty' });
     }
-    const category = await Category.findByIdAndUpdate(
-      req.params.id,
-      { name, description },
-      { new: true, runValidators: true }
-    );
-    if (!category) {
+    const existing = Category.findById(req.params.id);
+    if (!existing) {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
+    if (name !== undefined) {
+      const same = Category.findByName(name);
+      if (same && same.id !== existing.id) {
+        return res.status(400).json({ success: false, message: 'Category already exists' });
+      }
+    }
+    const category = Category.update(req.params.id, {
+      name: name !== undefined ? String(name).trim() : undefined,
+      description,
+    });
     res.status(200).json({ success: true, message: 'Category updated', data: category });
   } catch (err) {
     next(err);
@@ -59,10 +68,10 @@ exports.updateCategory = async (req, res, next) => {
 };
 
 // DELETE /api/categories/:id
-exports.deleteCategory = async (req, res, next) => {
+exports.deleteCategory = (req, res, next) => {
   try {
-    const category = await Category.findByIdAndDelete(req.params.id);
-    if (!category) {
+    const deleted = Category.remove(req.params.id);
+    if (!deleted) {
       return res.status(404).json({ success: false, message: 'Category not found' });
     }
     res.status(200).json({ success: true, message: 'Category deleted' });

@@ -1,7 +1,7 @@
 {
   "name": "course-api",
   "version": "1.0.0",
-  "description": "REST API with Express.js, Modular MVC, Auth, Category and Course CRUD",
+  "description": "REST API with Express.js, Modular MVC, Auth, Category and Course CRUD (in-memory storage, no database)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -11,8 +11,7 @@
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.5.0"
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
